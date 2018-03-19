@@ -20,5 +20,10 @@
   "homepage": "https://github.com/jhfoo/SmartRrd#readme",
   "devDependencies": {
     "supervisor": "^0.12.0"
+  },
+  "dependencies": {
+    "gm": "^1.23.1",
+    "moment": "^2.21.0",
+    "node-couchdb": "^1.3.0"
   }
 }

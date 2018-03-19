@@ -1,6 +1,6 @@
 "use strict"
 
-class MovingAverage {
+class CouchDbConn {
     constructor() {
         this.LastAverage = 0;
         this.TotalSamples = 0;
@@ -13,16 +13,22 @@ class MovingAverage {
     result() {
         return this.LastAverage;
     }
-    getSampleCount() {
-        return this.TotalSamples;
-    }
     reset() {
         this.LastAverage = 0;
         this.TotalSamples = 0;
     }
 }
 
-module.exports = MovingAverage;
+const CLASS_COUCHDB = 'COUCHDB';
+
+module.exports = {
+    CLASS_COUCHDB: CLASS_COUCHDB,
+    getDbConnClass: (className) => {
+        if (className === CLASS_COUCHDB)
+            return require('./CouchDbConn');
+        throw 'Unsupported class: ' + className; 
+    }
+};
 
 
 
