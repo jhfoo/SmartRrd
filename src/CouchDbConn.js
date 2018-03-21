@@ -11,10 +11,32 @@ class CouchDbConn {
         return this.conn.listDatabases();
     }
     addSample(sample) {
-        if (!sample)
-            sample = {};
-        sample.DateTimeCreated = (new Date()).getTime();
-        return this.conn.insert(this.dbase, sample);
+        // this is the right way to promisify a method involving a promised execution
+        return Promise.resolve().then(() => {
+            if (!sample)
+                throw 'Missing input object';
+            if (!sample.value)
+                throw 'Missing value key';
+            if (!sample.GroupId)
+                throw 'Missing GroupId key';
+            if (!sample.MetricId)
+                throw 'Missing MetricId key';
+
+            if (!sample.DateTimeCreated)
+                sample.DateTimeCreated = (new Date()).getTime();
+            return this.conn.insert(this.dbase, sample);
+        });
+    }
+    getSamples(DateTimeStart, DateTimeEnd) {
+        console.log('getSamples: %s, %s', DateTimeStart, DateTimeEnd);
+        return this.conn.mango(this.dbase, {
+            selector: {
+                DateTimeCreated: {
+                    $gte: DateTimeStart,
+                    $lte: DateTimeEnd
+                }
+            }
+        });
     }
     deleteAll() {
         return this.conn.dropDatabase(this.dbase).then((resp) => {
@@ -24,7 +46,3 @@ class CouchDbConn {
 }
 
 module.exports = CouchDbConn;
-
-
-
-

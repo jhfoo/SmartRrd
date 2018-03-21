@@ -51,6 +51,13 @@ class DrawChart {
         image.drawText(GraphLeft, 20, opt.title);
 
         // sort data into ascending order
+        opt.data = opt.data.sort((a, b) => {
+            if (a.DateTimeCreated > b.DateTimeCreated)
+                return 1;
+            if (a.DateTimeCreated < b.DateTimeCreated)
+                return -1;
+            return 0;
+        });
 
         let ChartData = this.getChartData(opt);
         console.log('Max: %s, Min: %s', ChartData.MaxValue, ChartData.MinValue);
@@ -62,8 +69,8 @@ class DrawChart {
             LastPointX = null,
             LastPointY = null;
         ChartData.data.forEach((item, index) => {
-            let ThisPointX = null, 
-                ThisPointY = null; 
+            let ThisPointX = null,
+                ThisPointY = null;
             if (item.value > 0)
                 console.log('DateTimeStart: %s, value: %s', item.DateTimeStart, item.value);
 
