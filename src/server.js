@@ -20,7 +20,8 @@ server.use(restify.plugins.bodyParser());
 server.post('/api/addSample', (req, res, next) => {
     logger.debug(req.body);
     db.addSample(req.body).then((resp) => {
-        resp.send('haha');
+        logger.debug(resp);
+        res.send('haha');
         return next();
     }).catch((err) => {
         res.send(err);

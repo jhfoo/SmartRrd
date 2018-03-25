@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "client": "./node_modules/.bin/supervisor -n exit src/client.js",
-    "dev": "./node_modules/.bin/supervisor -n exit src/server.js",
+    "client": "./node_modules/.bin/supervisor -n exit src/client/client.js",
+    "dev": "./node_modules/.bin/supervisor -n exit -i src/client src/server.js",
     "test": "node src/server.js test 500000"
   },
   "repository": {
