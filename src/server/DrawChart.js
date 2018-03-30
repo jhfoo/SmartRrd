@@ -2,7 +2,9 @@
 const fs = require('fs'),
     gm = require('gm'),
     moment = require('moment'),
-    MovingAvg = require('./MovingAvg');
+    MovingAvg = require('./MovingAvg'),
+    log4js = require('log4js'),
+    logger = log4js.getLogger();
 
 class DrawChart {
     constructor() {}
@@ -60,7 +62,7 @@ class DrawChart {
         });
 
         let ChartData = this.getChartData(opt);
-        console.log('Max: %s, Min: %s', ChartData.MaxValue, ChartData.MinValue);
+        logger.debug('Max: %s, Min: %s', ChartData.MaxValue, ChartData.MinValue);
         // draw the data line
         let GraphWidth = ImageWidth - GraphLeft - GraphRight,
             DataPointIntervalX = GraphWidth / ChartData.data.length,
@@ -84,13 +86,13 @@ class DrawChart {
                 }
             } else {
                 // calc graph point
-                console.log('BaseHeight: %s, substracted height: %s', (GraphTop + GraphHeight), (item.value * DataPointIntervalY))
+                logger.debug('BaseHeight: %s, substracted height: %s', (GraphTop + GraphHeight), (item.value * DataPointIntervalY))
                 ThisPointY = parseInt(GraphTop + GraphHeight - item.value * DataPointIntervalY);
                 ThisPointX = parseInt(GraphLeft + index * DataPointIntervalX);
             }
 
             if (ThisPointX != null && LastPointX != null) {
-                console.log('From %s, %s to %s, %s (%s)', LastPointX, LastPointY, ThisPointX, ThisPointY, DataPointIntervalX);
+                logger.debug('From %s, %s to %s, %s (%s)', LastPointX, LastPointY, ThisPointX, ThisPointY, DataPointIntervalX);
                 image.drawLine(LastPointX, LastPointY, ThisPointX, ThisPointY);
             }
 
@@ -99,10 +101,12 @@ class DrawChart {
         });
 
 
-
         // write to disk
         image.write('image.jpg', (err) => {
-            console.log(err);
+            if (err) {
+                logger.error(err);
+                throw err;
+            }
         });
     }
     getChartData(opt) {

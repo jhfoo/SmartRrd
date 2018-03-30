@@ -14,11 +14,16 @@ class SmartRrdClient {
         return axios.post('http://localhost:8000/api/addSample', sample);
     }
     getSamples(DateTimeStart, DateTimeEnd) {}
-    clearDatabase(dbase) {
-        let resp = await this.clearDatabaseAsync(dbase);
-        return resp;
+    drawChart(opt) {
+        return axios.post('http://localhost:8000/api/drawChart', opt);
     }
-    clearDatabaseAsync(dbase) {
+    clearDatabase(dbase) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => resolve("done!"), 1000)
+          });
+
+        if (!dbase)
+            dbase = this.dbase;
         return axios.get('http://localhost:8000/api/clearDatabase?name=' + dbase);
     }
 }
