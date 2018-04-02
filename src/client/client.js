@@ -22,14 +22,18 @@ const logger = log4js.getLogger();
 
 let client = new SmartRrdClient({
     url: 'http://localhost:8000',
-    dbase: 'test'
+    dbase: 'test',
+    MetricId: 'count',
+    GroupId: 'test'
 });
 
 testClient();
 
 async function testClient() {
     let resp = await client.clearDatabase('test');
-    logger.debug('Sync resp: ' + resp);
+    logger.debug('Sync resp: ' + resp.data);
+    return;
+
     let data = [{
         GroupId: 'test',
         MetricId: 'count',
@@ -50,7 +54,7 @@ async function testClient() {
         let item = data.shift();
         logger.debug('client.addSampleAsync');
         let result = await client.addSampleAsync(item);
-        logger.debug(resp);
+        logger.debug(resp.data);
     }
 
     // draw chart
@@ -61,7 +65,7 @@ async function testClient() {
         DateTimeEnd: DateTimeStart.add(1, 'h').add(2, 's').format('X'),
         DataPointIntervalSec: 60
     }).then((resp) => {
-        logger.debug(resp);
+        logger.debug(resp.data);
     }).catch((err) => {
         logger.error(err);
     });

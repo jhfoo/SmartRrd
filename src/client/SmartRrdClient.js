@@ -1,5 +1,6 @@
 "use strict"
-const axios = require('axios');
+const axios = require('axios'),
+    moment = require('moment');
 
 class SmartRrdClient {
     constructor(opt) {
@@ -7,10 +8,18 @@ class SmartRrdClient {
         if (!opt.dbase) {
             throw 'Missing key "dbase"';
         }
+        this.GroupId = opt.GroupId ? opt.GroupId : null;
+        this.MetricId = opt.MetricId ? opt.MetricId : null; 
         this.dbase = opt.dbase;
         this.url = opt.url;
     }
     addSampleAsync(sample) {
+        if (!sample.DateTimeCreated)
+            sample.DateTimeCreated = parseInt(moment().format('X'));
+        if (!sample.GroupId)
+            sample.GroupId = this.GroupId;
+        if (!sample.MetricId)
+            sample.MetricId = this.MetricId;
         return axios.post('http://localhost:8000/api/addSample', sample);
     }
     getSamples(DateTimeStart, DateTimeEnd) {}

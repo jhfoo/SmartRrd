@@ -4,7 +4,8 @@ const MovingAvg = require('./MovingAvg'),
     DrawChart = require('./DrawChart'),
     restify = require('restify'),
     Config = require('../conf/Config'),
-    log4js = require('log4js');
+    log4js = require('log4js'),
+    errs = require('restify-errors');
 
 // primary init: setup logger
 log4js.configure(Config.log4js);
@@ -33,10 +34,31 @@ server.post('/api/addSample', (req, res, next) => {
     });
 });
 
+server.get('/api/.*', (req, res, next) => {
+    res.send({
+        status: 'ERROR',
+        message: 'Invalid URI'
+    });
+});
+
 server.get('/api/clearDatabase', (req, res, next) => {
-    logger.debug('API call: /api/clearDatabase');
-    logger.debug('name: ' + req.query.name);
-    next();
+    try {
+        if (!req.query.name)
+            return next(new errs.InternalServerError( 'Missing "name" key'));
+
+        logger.debug('API call: /api/clearDatabase');
+        logger.debug('name: ' + req.query.name);
+        db.deleteAll().then((resp) => {
+            res.send('OK');
+            next();
+        }).catch((err) => {
+            console.log(err);
+            next(err);
+        });
+    } catch (err) {
+        logger.error(err);
+        next(err);
+    }
 });
 
 server.post('/api/drawChart', async (req, res, next) => {
@@ -60,11 +82,43 @@ server.post('/api/drawChart', async (req, res, next) => {
         });
 
         res.send('OK');
+        next();
     } catch (err) {
         logger.error(err);
-        res.send(err);
+        next(err);
     }
-    next();
+});
+
+// server.get('/api/.*', (req, res, next) => {
+//     res.send({
+//         status: 'ERROR',
+//         message: 'Invalid URI'
+//     });
+//     next();
+// });
+
+server.on('restifyError', function(req, res, err, callback) {
+    logger.error(err);
+    err.toJSON = function customToJSON() {
+        logger.error('toJSON');
+        return {
+            status: 'ERROR',
+            name: err.name,
+            message: err.message
+        };
+    };
+    err.toString = function customToString() {
+        logger.error('toString');
+        return {
+            status: 'ERROR',
+            name: err.name,
+            message: err.message
+        };
+    };
+    // err.toString = function customToString() {
+    //     return 'i just want a string';
+    // };
+    return callback();
 });
 
 // start REST service
