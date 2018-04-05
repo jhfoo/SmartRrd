@@ -24,6 +24,7 @@ class SmartRrdClient {
     }
     getSamples(DateTimeStart, DateTimeEnd) {}
     drawChart(opt) {
+        console.log('SmartRrdClient.drawChart()');
         return axios.post('http://localhost:8000/api/drawChart', opt);
     }
     clearDatabase(dbase) {

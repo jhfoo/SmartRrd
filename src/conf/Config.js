@@ -24,6 +24,9 @@ module.exports = {
                 port: 5984
             },
             table: 'test'
+        },
+        MongoDb: {
+            url: 'mongodb://localhost:27017'
         }
     }
 };

@@ -12,8 +12,8 @@ log4js.configure(Config.log4js);
 const logger = log4js.getLogger();
 
 // secondary init
-const DbConn = DbConnFactory.getDbConnClass(DbConnFactory.CLASS_COUCHDB),
-    db = new DbConn(Config.db.CouchDb),
+const DbConn = DbConnFactory.getDbConnClass(DbConnFactory.CLASS_MONGODB),
+    db = new DbConn(Config.db.MongoDb),
     server = restify.createServer();
 
 // config REST service
@@ -29,6 +29,7 @@ server.post('/api/addSample', (req, res, next) => {
         res.send('haha');
         next();
     }).catch((err) => {
+        logger.error(err);
         res.send(err);
         next();
     });
@@ -44,12 +45,31 @@ server.get('/api/.*', (req, res, next) => {
 server.get('/api/clearDatabase', (req, res, next) => {
     try {
         if (!req.query.name)
-            return next(new errs.InternalServerError( 'Missing "name" key'));
+            return next(new errs.InternalServerError('Missing "name" key'));
 
         logger.debug('API call: /api/clearDatabase');
         logger.debug('name: ' + req.query.name);
         db.deleteAll().then((resp) => {
             res.send('OK');
+            next();
+        }).catch((err) => {
+            console.log(err);
+            next(err);
+        });
+    } catch (err) {
+        logger.error(err);
+        next(err);
+    }
+});
+
+server.get('/api/getDatabases', (req, res, next) => {
+    try {
+        logger.debug('API call: /api/getDatabases');
+        db.getDatabases().then((resp) => {
+            res.send({
+                status: 'OK',
+                data: resp.databases
+            });
             next();
         }).catch((err) => {
             console.log(err);
@@ -69,8 +89,13 @@ server.post('/api/drawChart', async (req, res, next) => {
 
         let DateTimeStart = parseInt(req.body.DateTimeStart),
             DateTimeEnd = parseInt(req.body.DateTimeEnd),
-            data = await db.getSamples(DateTimeStart, DateTimeEnd);
-        logger.debug(data);
+            docs = await db.getSamples(DateTimeStart, DateTimeEnd);
+        
+        // sanitise data
+        if (docs.data)
+            docs = docs.data.docs;
+
+        logger.debug(docs);
         chart.draw({
             title: 'Minute-level traffic for Pi',
             YAxisName: 'Hits',
@@ -78,7 +103,7 @@ server.post('/api/drawChart', async (req, res, next) => {
             DateTimeStart: DateTimeStart,
             DateTimeEnd: DateTimeEnd,
             DataPointIntervalSec: parseInt(req.body.DataPointIntervalSec),
-            data: data.data.docs
+            data: docs
         });
 
         res.send('OK');
@@ -97,7 +122,7 @@ server.post('/api/drawChart', async (req, res, next) => {
 //     next();
 // });
 
-server.on('restifyError', function(req, res, err, callback) {
+server.on('restifyError', function (req, res, err, callback) {
     logger.error(err);
     err.toJSON = function customToJSON() {
         logger.error('toJSON');
@@ -121,10 +146,35 @@ server.on('restifyError', function(req, res, err, callback) {
     return callback();
 });
 
+
 // start REST service
 server.listen(Config.service.port, () => {
     logger.debug('Listening on %s', server.url);
 });
+
+function initDatabase() {
+    if (!db.conn) {
+        setTimeout(() => initDatabase(), 500);
+        return;
+    }
+
+    // else
+    db.getDatabases().then((data) => {
+        console.log(data);
+        if (data.databases.find((item) => {
+            return item.name === 'smartrrd';
+        })) {
+            console.log('Database "smartrrd" exists');
+        } else {
+            console.log('Creating database "smartrrd"');
+            return db.createDatabase('smartrrd');
+        }
+    }).then((resp) => {
+        logger.debug('Database initialised');
+    }).catch((err) => {
+        logger.error(err);
+    });
+}
 
 if (process.argv.length < 3) {
     console.log('To test the algorithm try:\n' +
@@ -132,6 +182,7 @@ if (process.argv.length < 3) {
         ' or\n' +
         ' node src/server.js test <sample size>\n');
 
+    initDatabase();
 
     // db.deleteAll().then((resp) => {
     //     return db.getDatabases();

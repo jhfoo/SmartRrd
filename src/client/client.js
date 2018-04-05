@@ -30,9 +30,9 @@ let client = new SmartRrdClient({
 testClient();
 
 async function testClient() {
-    let resp = await client.clearDatabase('test');
-    logger.debug('Sync resp: ' + resp.data);
-    return;
+    // let resp = await client.clearDatabase('test');
+    // logger.debug('Sync resp: ' + resp.data);
+    // return;
 
     let data = [{
         GroupId: 'test',
@@ -54,7 +54,7 @@ async function testClient() {
         let item = data.shift();
         logger.debug('client.addSampleAsync');
         let result = await client.addSampleAsync(item);
-        logger.debug(resp.data);
+        logger.debug(result.data);
     }
 
     // draw chart

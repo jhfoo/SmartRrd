@@ -19,13 +19,17 @@ class CouchDbConn {
     }
 }
 
-const CLASS_COUCHDB = 'COUCHDB';
+const CLASS_COUCHDB = 'COUCHDB',
+    CLASS_MONGODB = 'MONGODB';
 
 module.exports = {
     CLASS_COUCHDB: CLASS_COUCHDB,
+    CLASS_MONGODB: CLASS_MONGODB,
     getDbConnClass: (className) => {
         if (className === CLASS_COUCHDB)
             return require('./CouchDbConn');
+        else if (className === CLASS_MONGODB)
+            return require('./MongoDbConn');
         throw 'Unsupported class: ' + className; 
     }
 };
