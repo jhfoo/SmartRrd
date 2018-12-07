@@ -1,39 +1,35 @@
 const MovingAvg = require('./MovingAvg'),
     moment = require('moment'),
-    DbConnFactory = require('./DbConnFactory'),
     DrawChart = require('./DrawChart'),
     restify = require('restify'),
-    Config = require('../conf/Config'),
+    // Config = require('../conf/Config'),
     log4js = require('log4js'),
-    errs = require('restify-errors');
-
+    errs = require('restify-errors'),
+    Router = require('restify-router').Router,
+    router = new Router(),
+    Config = require('./ConfigReader')('../conf/config.json');
+    
 // primary init: setup logger
 log4js.configure(Config.log4js);
 const logger = log4js.getLogger();
 
 // secondary init
-const DbConn = DbConnFactory.getDbConnClass(DbConnFactory.CLASS_MONGODB),
-    db = new DbConn(Config.db.MongoDb),
-    server = restify.createServer();
+const server = restify.createServer({
+    formatters: {
+        'text/plain': (req, res, body) => {
+            logger.debug('In formatters');
+            if (body instanceof Error) {
+                return body.message;
+            }        
+        }
+    }
+});
 
 // config REST service
 server.use(restify.plugins.bodyParser());
 server.use(restify.plugins.queryParser({
     mapParams: false
 }));
-server.post('/api/addSample', (req, res, next) => {
-    logger.debug('API call: /api/addSample');
-    logger.debug(req.body);
-    db.addSample(req.body).then((resp) => {
-        logger.debug(resp);
-        res.send('haha');
-        next();
-    }).catch((err) => {
-        logger.error(err);
-        res.send(err);
-        next();
-    });
-});
 
 server.get('/api/.*', (req, res, next) => {
     res.send({
@@ -42,44 +38,6 @@ server.get('/api/.*', (req, res, next) => {
     });
 });
 
-server.get('/api/clearDatabase', (req, res, next) => {
-    try {
-        if (!req.query.name)
-            return next(new errs.InternalServerError('Missing "name" key'));
-
-        logger.debug('API call: /api/clearDatabase');
-        logger.debug('name: ' + req.query.name);
-        db.deleteAll().then((resp) => {
-            res.send('OK');
-            next();
-        }).catch((err) => {
-            console.log(err);
-            next(err);
-        });
-    } catch (err) {
-        logger.error(err);
-        next(err);
-    }
-});
-
-server.get('/api/getDatabases', (req, res, next) => {
-    try {
-        logger.debug('API call: /api/getDatabases');
-        db.getDatabases().then((resp) => {
-            res.send({
-                status: 'OK',
-                data: resp.databases
-            });
-            next();
-        }).catch((err) => {
-            console.log(err);
-            next(err);
-        });
-    } catch (err) {
-        logger.error(err);
-        next(err);
-    }
-});
 
 server.post('/api/drawChart', async (req, res, next) => {
     logger.debug('API call: /api/drawChart');
@@ -122,59 +80,47 @@ server.post('/api/drawChart', async (req, res, next) => {
 //     next();
 // });
 
-server.on('restifyError', function (req, res, err, callback) {
-    logger.error(err);
-    err.toJSON = function customToJSON() {
-        logger.error('toJSON');
-        return {
-            status: 'ERROR',
-            name: err.name,
-            message: err.message
-        };
-    };
-    err.toString = function customToString() {
-        logger.error('toString');
-        return {
-            status: 'ERROR',
-            name: err.name,
-            message: err.message
-        };
-    };
-    // err.toString = function customToString() {
-    //     return 'i just want a string';
-    // };
-    return callback();
+server.on('InternalServer', (req, res, err, next) => {
+    logger.error('InternalServer');
+    next(new errs.InternalServerError('argh!'));
 });
+
+// server.on('restifyError', function (req, res, err, next) {
+//     logger.error(err.message);
+
+//     err = new errs.InternalServerError('argh!');
+//     // err.toJSON = function customToJSON() {
+//     //     logger.error('toJSON');
+//     //     return {
+//     //         status: 'ERROR',
+//     //         name: err.name,
+//     //         message: err.message
+//     //     };
+//     // };
+//     // // err.toString = function customToString() {
+//     // //     logger.error('toString');
+//     // //     logger.error('ERR.NAME: %s', err.name);
+//     //     // {
+//     //     //     status: 'ERROR',
+//     //     //     name: err.name,
+//     //     //     message: err.message
+//     //     // };
+//     // // };
+//     // err.toString = function customToString() {
+//     //     return 'i just want a string';
+//     // };
+//     return next(err);
+// });
+
+// register routes
+router.add('/api', require('./ApiPlugins/default.js'));
+router.applyRoutes(server);
 
 
 // start REST service
 server.listen(Config.service.port, () => {
-    logger.debug('Listening on %s', server.url);
+    logger.debug('%s listening on %s', server.name, server.url);
 });
-
-function initDatabase() {
-    if (!db.conn) {
-        setTimeout(() => initDatabase(), 500);
-        return;
-    }
-
-    // else
-    db.getDatabases().then((data) => {
-        console.log(data);
-        if (data.databases.find((item) => {
-            return item.name === 'smartrrd';
-        })) {
-            console.log('Database "smartrrd" exists');
-        } else {
-            console.log('Creating database "smartrrd"');
-            return db.createDatabase('smartrrd');
-        }
-    }).then((resp) => {
-        logger.debug('Database initialised');
-    }).catch((err) => {
-        logger.error(err);
-    });
-}
 
 if (process.argv.length < 3) {
     console.log('To test the algorithm try:\n' +
@@ -182,7 +128,7 @@ if (process.argv.length < 3) {
         ' or\n' +
         ' node src/server.js test <sample size>\n');
 
-    initDatabase();
+    // initDatabase();
 
     // db.deleteAll().then((resp) => {
     //     return db.getDatabases();

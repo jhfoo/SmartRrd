@@ -1,0 +1,43 @@
+{
+    "production": {
+        "server": {
+            "PORT": 8003
+        }
+    },
+    "default": {
+        "server": {
+            "PORT": 8004
+        }
+    },
+    "TempDir": "../tmp",
+    "service": {
+        "port": 8088
+    },
+    "log4js": {
+        "appenders": {
+            "screen": {
+                "type": "console"
+            }
+        },
+        "categories": {
+            "default": {
+                "appenders": ["screen"],
+                "level": "debug"
+            }
+
+        }
+    },
+    "db": {
+        "CouchDb": {
+            "db": {
+                "host": "localhost",
+                "protocol": "http",
+                "port": 5984
+            },
+            "table": "test"
+        },
+        "MongoDb": {
+            "url": "mongodb://localhost:27017"
+        }
+    }
+}
