@@ -1,18 +1,15 @@
 {
     "production": {
         "server": {
-            "PORT": 8003
+            "port": 8003
         }
     },
     "default": {
         "server": {
-            "PORT": 8004
+            "port": 8088
         }
     },
     "TempDir": "../tmp",
-    "service": {
-        "port": 8088
-    },
     "log4js": {
         "appenders": {
             "screen": {

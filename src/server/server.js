@@ -118,7 +118,7 @@ router.applyRoutes(server);
 
 
 // start REST service
-server.listen(Config.service.port, () => {
+server.listen(Config.server.port, () => {
     logger.debug('%s listening on %s', server.name, server.url);
 });
 
