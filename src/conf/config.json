@@ -1,7 +1,7 @@
 {
     "production": {
         "server": {
-            "port": 8003
+            "port": 8001
         }
     },
     "default": {
