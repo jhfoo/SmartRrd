@@ -1,4 +1,5 @@
-const assert = require('assert'),
+const SocketClient = require('socket.io-client'),
+    assert = require('assert'),
     Router = require('restify-router').Router,
     router = new Router(),
     errs = require('restify-errors'),
@@ -10,12 +11,14 @@ const assert = require('assert'),
     SampleProcessor = require('../SampleProcessor');
 
 let db = null;
+let socket = null;
+
+const SOCK_SERVER_URL = 'http://gretel.kungfoo.info:8080';
 
 router.get('/addSample', (req, res, next) => {
     try {
         logger.debug('Called: default.addSample()');
         SampleProcessor.addSample(assert(req.query.db));
-
         res.send({
             status: Constant.ApiResponse.OK,
         })
@@ -47,11 +50,20 @@ router.get('/getDatabases', (req, res, next) => {
 
 
 router.post('/addSample', (req, res, next) => {
-    logger.debug('Called: default.addSample()');
+    logger.debug('POST default.addSample()');
     logger.debug(req.body);
+    let data = {
+        TempC: req.body.temp,
+        humidity: req.body.humi,
+        DeviceId: req.body.DeviceId,
+        DeviceType: req.body.DeviceType,
+        DateTime: Math.round((new Date()).getTime() / 1000)
+    };
+    socket.emit('NewReading', data);
     res.send({
         status: Constant.ApiResponse.OK
     });
+
     next();
     // getDb().addSample(req.body).then((resp) => {
     //     logger.debug(resp);
@@ -110,4 +122,15 @@ function getDb() {
     return db;
 }
 
-module.exports = router;
+function init() {
+    logger.debug('Connecting to ' + SOCK_SERVER_URL);
+    socket = SocketClient(SOCK_SERVER_URL);
+    socket.on('connect', () => {
+        logger.debug('Connected to ' + SOCK_SERVER_URL);
+    });
+}
+
+module.exports = {
+    init: init,
+    router: router
+};

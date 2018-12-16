@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/jhfoo/SmartRrd#readme",
   "devDependencies": {
+    "socket.io": "^2.2.0",
     "supervisor": "*"
   },
   "dependencies": {

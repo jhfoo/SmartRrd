@@ -7,7 +7,8 @@ const MovingAvg = require('./MovingAvg'),
     errs = require('restify-errors'),
     Router = require('restify-router').Router,
     router = new Router(),
-    Config = require('./ConfigReader')('../conf/config.json');
+    Config = require('./ConfigReader')('../conf/config.json'),
+    DefaultPlugin = require('./ApiPlugins/default.js');
     
 // primary init: setup logger
 log4js.configure(Config.log4js);
@@ -113,7 +114,8 @@ server.on('InternalServer', (req, res, err, next) => {
 // });
 
 // register routes
-router.add('/api', require('./ApiPlugins/default.js'));
+DefaultPlugin.init();
+router.add('/api', DefaultPlugin.router);
 router.applyRoutes(server);
 
 
